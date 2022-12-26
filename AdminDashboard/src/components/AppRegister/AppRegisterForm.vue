@@ -6,14 +6,14 @@
     <el-form
       ref="registerForm"
       :rules="rules" 
-      :model="registerForm"
+      :model="credentials"
       @keyup.enter.native="register('registerForm')"
     >
       <el-form-item label="Username" prop="username">
         <el-input
           type="text"
           placeholder="Please enter username"
-          v-model="registerForm.username"
+          v-model="credentials.username"
           clearable
         ></el-input>
       </el-form-item>
@@ -21,7 +21,7 @@
         <el-input
           type="password"
           placeholder="Please enter password"
-          v-model="registerForm.password"
+          v-model="credentials.password"
           show-password
         ></el-input>
       </el-form-item>
@@ -29,7 +29,7 @@
         <el-input
           type="password"
           placeholder="Please enter password"
-          v-model="registerForm.password2"
+          v-model="credentials.password2"
           show-password
         ></el-input>
       </el-form-item>
@@ -43,9 +43,6 @@
 </template>
 
 <script>
-import accounts from "@/assets/user-accounts.json";
-import { AuthService } from "@/service/auth-service.js";
-import { auth } from "@/store/store";
 export default {
   name: "app-register-form",
   data() {
@@ -66,22 +63,20 @@ export default {
     };
 
     var confirmPassword = (rule, value, callback) => {
-      if (!value && !!this.registerForm.password) {
+      if (!value && !!this.credentials.password) {
         return callback(new Error("Please re enter password"));
-      } else if (this.registerForm.password !== value) {
+      } else if (this.credentials.password !== value) {
         return callback(new Error("Password mismatch"));
       } else {
         return callback();
       }
     };
     return {
-      registerForm: {
+      credentials: {
         username: "",
         password: "",
         password2: "",
       },
-      users: accounts.users,
-      auth,
       rules: {
         username: [{ validator: checkUsername, trigger: "blur" }],
         password: [{ validator: validatePassword, trigger: "blur" }],
@@ -91,64 +86,16 @@ export default {
   },
   methods: {
     register(formName) {
-      this.$refs[formName].validate(async (isValid) => {
+      this.$refs[formName].validate( (isValid) => {
         if (isValid) {
-          const newUser = this.registerForm;
-          const authService = new AuthService(newUser);
-          try {
-            const user = await authService.checkUser(
-              "http://localhost:3000/users"
-            );
-            if (user) {
-              console.log("USER ALREADY EXIST");
-              this.alertUserExist()
-              return false;
-            }
-            const result = await authService.addUser(
-              "http://localhost:3000/users"
-            );
-            if (result) {
-              console.log("REGISTERED");
-              this.alertRegistrationSuccess()
-              return true;
-            } else {
-              console.log("REGISTRATION FAILED");
-              return false;
-            }
-          } catch (error) {
-            console.log(error);
-          }
+          this.$emit('user-register', this.credentials)
         } else {
           console.log("INVALID INPUT");
           return false;
         }
       });
     },
-    alertRegistrationSuccess() {
-      this.$alert("You are now registered. Click 'OK' to go to the login page.", "Success!", {
-        confirmButtonText: "OK",
-        callback: (action) => {
-          this.$router.replace('/login')
-        },
-      });
-    },
-    alertRegistrationFailed() {
-      this.$alert("Registration failed.", "Error!", {
-        confirmButtonText: "OK",
-        callback: (action) => {
-          return
-        }
-      })
-    },
-    alertUserExist() {
-      this.$alert("User already exist.", "Error!", {
-        type: "error",
-        confirmButtonText: "OK",
-        callback: (action) => {
-          return
-        }
-      })
-    }
+    
   },
 };
 </script>

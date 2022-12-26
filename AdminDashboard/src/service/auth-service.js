@@ -1,47 +1,76 @@
+import { auth } from "@/store/store.js";
+import { errors } from "@/define/errors.js";
 class Auth {
-  constructor(user) {
-    this.user = user;
-    this.usersURL = "http://localhost:3000/users"
-  }
+	constructor() {
+		this.authState = auth;
+		this.usersURL = "http://localhost:3000/users";
+	}
 
-  async checkUser() {
-    try {
-        const queryURL = `${this.usersURL}?username=${this.user.username}`
-        const response = await fetch(queryURL)
-        const data = await response.json()
-        return data[0]
-    } catch (error) {
-        throw error
-    }
-  }
+	/**
+	 * @returns { Promise<object | undefined> }
+	 * @throws { error }
+	 */
+	async checkUser(credentials) {
+		try {
+			const queryURL = `${this.usersURL}?username=${credentials.username}`;
+			const response = await fetch(queryURL);
+			const data = await response.json();
+			return data[0];
+		} catch (error) {
+			throw error;
+		}
+	}
 
-  async addUser() {
-    try {
-        const user = {
-            "username": this.user.username,
-            "password": this.user.password
-        }
-        const response = await fetch(this.usersURL, {
-            method: 'POST',
-            headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(user)
-        })
+	/**
+	 *
+	 * @param { object } credentials user credentials
+	 * @returns { Promise<boolean | number> } success | error code
+	 */
+	async registerUser(credentials) {
+		try {
+			const user = await this.checkUser(credentials);
+			console.log(user);
+			if (!!user) {
+				// user exists
+				console.error("Exist");
+				return errors.USER_EXIST.code;
+			}
+			const result = this.addUser(credentials);
+			return result ? result : errors.UNKNOWN.code;
+		} catch (error) {
+			throw error;
+		}
+	}
 
-        return response.ok ? true : false
-    } catch (error) {
-        throw error
-    }
-  }
+	/**
+	 *
+	 * @returns { Promise<object | undefined | boolean>}
+	 */
+	async userLogin(credentials) {
+		try {
+			const user = await this.checkUser(credentials);
+			if (!!user) {
+				const isAuthorized = this.checkPassword(
+					user.password,
+					credentials.password
+				);
+				return isAuthorized ? user : isAuthorized;
+			}
+			return user;
+		} catch (error) {
+			throw error;
+		}
+	}
 
-  async authenticateUser(user) {
-    return this.user.password === user.password
-  }
-
-  checkPassword(password) {
-    return this.user.password === password
-  }
+	/**
+	 *
+	 * @param { string } password1 first password
+	 * @param { string } password2 second password
+	 * @returns { boolean } if passwords are equal or not
+	 */
+	checkPassword(password1, password2) {
+		return password1 === password2;
+	}
 }
 
-export const AuthService = Auth
+export const AuthService = new Auth();

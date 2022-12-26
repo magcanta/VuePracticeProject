@@ -7,10 +7,11 @@ Vue.use(VueRouter);
 
 const routeGuard = (to , from, next) => {
   var isAuthenticated = auth.isLoggedIn
-  if(to.name !== "login" && !isAuthenticated) {
+  console.log(isAuthenticated)
+  if((to.name !== "login" && to.name !== "register") && !isAuthenticated) {
     console.log("redirect")
     next({name: "login"})
-  } else if(to.name == "login" && isAuthenticated) {
+  } else if((to.name === "login" || to.name === "register") && isAuthenticated) {
     next({name: "/"})
   }
    else next()
@@ -22,6 +23,7 @@ const router = new VueRouter({
   routes: [
     {
       path: "/",
+      name: "/",
       beforeEnter: routeGuard,
       redirect: { name: 'app'}
     },
@@ -54,6 +56,7 @@ const router = new VueRouter({
     {
       path: '/register',
       name: 'register',
+      beforeEnter: routeGuard,
       component: () => import('../views/RegisterView.vue')
     },
     {
